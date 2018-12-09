@@ -19,9 +19,12 @@ class LoginViewController: UIViewController {
     
     // MARK: Actions
     @IBAction func logInButtonTapped(_ sender: UIButton) {
+        
+        // sends alert if text fields are empty
         if emailTextField.text == "" || passwordTextField.text == "" {
             displayAlert(title: "Missing Information", message: "Please provide a valid email and password for your account.")
         } else {
+            // sign in to the account
             if let email = emailTextField.text {
                 if let password = passwordTextField.text {
                     Auth.auth().signIn(withEmail: email, password: password) { (user, error) in
@@ -39,11 +42,15 @@ class LoginViewController: UIViewController {
     }
     
     @IBAction func createAccountButtonTapped(_ sender: UIButton) {
+        
+        // alert if text fields are empty
         if emailTextField.text == "" || passwordTextField.text == "" {
             displayAlert(title: "Missing Information", message: "Please provide both an email and password for your account.")
         }
         
         if let email = emailTextField.text {
+            
+            // check if password is more than 6 characters ***check if email is rigth format
             if (passwordTextField.text?.count)! >= 6 {
                 print("password more than 6 characters")
                 if let password = passwordTextField.text {
@@ -53,12 +60,12 @@ class LoginViewController: UIViewController {
                             self.displayAlert(title: "Error", message: error!.localizedDescription)
                         } else {
                             // success account created
-                            print("created account!")
                             self.performSegue(withIdentifier: "loginToMap", sender: nil)
                         }
                     }
                 }
             } else {
+                // display alert if password is less than 6 characters long
                 displayAlert(title: "Error", message: "The password must be 6 characters long or more.")
             }
         }
