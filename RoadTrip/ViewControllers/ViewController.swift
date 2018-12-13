@@ -9,6 +9,8 @@
 import UIKit
 import MapKit
 import CoreLocation
+import FirebaseDatabase
+import FirebaseAuth
 
 // anything that conforms to this protocol has to implement this method
 protocol HandleMapSearch {
@@ -17,55 +19,76 @@ protocol HandleMapSearch {
  
 class ViewController: UIViewController, CLLocationManagerDelegate {
     
-    let locationManager = CLLocationManager()
+    // MARK: - Variables
+    var locationManager = CLLocationManager()
+    var userLocation = CLLocationCoordinate2D()
     var steps = [MKRoute.Step]()
-
-    @IBOutlet weak var mapView: MKMapView!
-    @IBOutlet weak var addFriendButton: UIButton!
-    
     var resultsSearchController: UISearchController? = nil
     // cahcing any incoming placemarks
     var selectedPin: MKPlacemark? = nil
-    
-    let manager = CLLocationManager()
-     
     var geoFire: GeoFire!
+    
+    // bool if user is currently in a road trip                                 !Not used yet!
+    // userInTrip should be true when user adds an friend in the trip
+    var userInTrip = false
+
+    // MARK: - Outlets
+    @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var addFriendButton: UIBarButtonItem!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
         // this requests to use location even outside of the app
-        manager.requestAlwaysAuthorization()
-        manager.startUpdatingLocation()
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
         
         setupSearchBar()
 
     }
     
-    @IBAction func addFriendButtonTapped(_ sender: UIButton) {
+    @IBAction func addFriendButtonTapped(_ sender: UIBarButtonItem) {
         
+        // get the current users email
+        if let email = Auth.auth().currentUser?.email {
+            // get the coordinates of the user
+            let userInRide: [String: Any] = ["email": email, "lat": userLocation.latitude, "lon": userLocation.longitude]
+            Database.database().reference().child("AddUsers").childByAutoId().setValue(userInRide)
+            print("added users location and email to firebase.")
+        }
     }
     
     // Called everytime our user's location is updated
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let location = locations[0]
-        // how much we want our app to be zoomed in on the location
-        let span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        // getting the current location
-        let myLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
-        let region: MKCoordinateRegion = MKCoordinateRegion(center: myLocation, span: span)
-        mapView.setRegion(region, animated: true)
-        mapView.userTrackingMode = .followWithHeading
         
-        // this shows the blue dot on the map
-        self.mapView.showsUserLocation = true
+        if let coordinates = manager.location?.coordinate {
+            let center = CLLocationCoordinate2D(latitude: coordinates.latitude, longitude: coordinates.longitude)
+            userLocation = center
+            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01))
+            mapView.setRegion(region, animated: true)
+            mapView.userTrackingMode = .followWithHeading
+            mapView.showsUserLocation = true
+        }
+        
+//        let location = locations[0]
+//        // how much we want our app to be zoomed in on the location
+//        let span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+//        // getting the current location
+//        let myLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+//        let region: MKCoordinateRegion = MKCoordinateRegion(center: myLocation, span: span)
+//        mapView.setRegion(region, animated: true)
+//        mapView.userTrackingMode = .followWithHeading
+//
+//        // this shows the blue dot on the map
+//        self.mapView.showsUserLocation = true
+        
     }
     
     // function called in dropPinZoomIn()
     func getDirections(to toLocation: CLLocationCoordinate2D) {
-        guard let fromLocation = manager.location?.coordinate else {
+        guard let fromLocation = locationManager.location?.coordinate else {
             return
         }
         let request = createDirectionsRequest(from: fromLocation, to: toLocation)

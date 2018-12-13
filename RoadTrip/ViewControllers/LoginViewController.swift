@@ -17,6 +17,10 @@ class LoginViewController: UIViewController {
     @IBOutlet weak var logInButton: UIButton!
     @IBOutlet weak var createAccountButton: UIButton!
     
+    @IBAction func unwindSegue(segue: UIStoryboardSegue) {
+        
+    }
+    
     // MARK: Actions
     @IBAction func logInButtonTapped(_ sender: UIButton) {
         
@@ -85,6 +89,4 @@ class LoginViewController: UIViewController {
         super.viewDidLoad()
 
     }
-    
-    
 }

@@ -8,6 +8,8 @@
 
 import Foundation
 import UIKit
+import FirebaseAuth
+import FirebaseDatabase
 
 struct Names {
     var title: String
@@ -16,6 +18,8 @@ struct Names {
 class FriendsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate {
     
     var names = [Names]()
+    
+    
     
     @IBOutlet weak var tableView: UITableView!
     
@@ -38,6 +42,7 @@ class FriendsViewController: UIViewController, UITableViewDataSource, UITableVie
     
     // popup action to add name, latitude, and loingitude
     @IBAction func addButtonTapped(_ sender: UIBarButtonItem) {
+        
         let alert = UIAlertController(title: "Add Location", message: "Input latitude and longitude", preferredStyle: .alert)
         
         // adding name, latitude, longitude
@@ -61,20 +66,6 @@ class FriendsViewController: UIViewController, UITableViewDataSource, UITableVie
             self.tableView.insertRows(at: [indexPath], with: .automatic)
             self.tableView.endUpdates() })
         
-//        addAction.isEnabled = false
-        
-        // checks if there is text
-//        func textFieldName(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-//            let userEnteredString = textField.text
-//            let newString = (userEnteredString! as NSString).replacingCharacters(in: range, with: string) as NSString
-//            if newString != "" {
-//                addAction.isEnabled = false
-//            } else {
-//                addAction.isEnabled = true
-//            }
-//            return true
-//        }
-        
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: { [weak alert] (_) in
             let textField = alert?.textFields![0]
             print("Text field: \(textField?.text as Optional)")})
@@ -83,6 +74,19 @@ class FriendsViewController: UIViewController, UITableViewDataSource, UITableVie
         
         self.present(alert, animated: true, completion: nil)
     }
+    
+    @IBAction func cancelTripButtonTapped(_ sender: UIButton) {
+        
+        // user gets removed out of that trip
+        if let email = Auth.auth().currentUser?.email {
+            Database.database().reference().child("AddUsers").queryOrdered(byChild: "email").queryEqual(toValue: email).observe(.childAdded) { (snapshot) in
+                snapshot.ref.removeValue()
+                Database.database().reference().child("AddUsers").removeAllObservers()
+            }
+        }
+        dismiss(animated: true, completion: nil)
+    }
+    
     
     func usrNameTextField(textField: UITextField!) {
         textField.placeholder = "Name"
@@ -94,6 +98,21 @@ class FriendsViewController: UIViewController, UITableViewDataSource, UITableVie
         textField.placeholder = "Longitude"
     }
     
+    @IBAction func logoutButtonTapped(_ sender: UIBarButtonItem) {
+        
+        // remove user out of current trip
+        if let email = Auth.auth().currentUser?.email {
+            Database.database().reference().child("AddUsers").queryOrdered(byChild: "email").queryEqual(toValue: email).observe(.childAdded) { (snapshot) in
+                snapshot.ref.removeValue()
+                Database.database().reference().child("AddUsers").removeAllObservers()
+            }
+        }
+        
+        // sign user out
+        try? Auth.auth().signOut()
+        
+        
+    }
     
     
     
